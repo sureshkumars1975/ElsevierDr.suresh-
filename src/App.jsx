@@ -1,8 +1,24 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { journals, subjects, models } from './data/journals.js';
 import JournalCard from './components/JournalCard.jsx';
 
 const LETTERS = ['All', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
+
+function downloadCsv(list) {
+  const esc = (v) => `"${String(v).replace(/"/g, '""')}"`;
+  const rows = [
+    ['Title', 'Subject', 'Access model', 'Scope', 'Journal URL', 'Guide for authors'],
+    ...list.map((j) => [j.title, j.subject, j.model, j.scope, j.url, j.guideUrl]),
+  ];
+  const blob = new Blob(['\ufeff' + rows.map((r) => r.map(esc).join(',')).join('\r\n')], {
+    type: 'text/csv;charset=utf-8',
+  });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'nil-apc-journals.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
 
 function loadFavorites() {
   try {
@@ -20,6 +36,28 @@ export default function App() {
   const [sort, setSort] = useState('az');
   const [onlyFavs, setOnlyFavs] = useState(false);
   const [favorites, setFavorites] = useState(loadFavorites);
+  const [showTop, setShowTop] = useState(false);
+  const searchRef = useRef(null);
+
+  // "/" focuses search, Esc clears it.
+  useEffect(() => {
+    const onKey = (e) => {
+      const typing = ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName);
+      if (e.key === '/' && !typing) {
+        e.preventDefault();
+        searchRef.current?.focus();
+      } else if (e.key === 'Escape' && document.activeElement === searchRef.current) {
+        setQuery('');
+      }
+    };
+    const onScroll = () => setShowTop(window.scrollY > 600);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -48,6 +86,8 @@ export default function App() {
     setOnlyFavs(false);
   };
 
+  const lettersInUse = useMemo(() => new Set(journals.map((j) => j.title[0].toUpperCase())), []);
+
   const subjectCounts = useMemo(() => {
     const counts = {};
     journals.forEach((j) => (counts[j.subject] = (counts[j.subject] || 0) + 1));
@@ -58,7 +98,10 @@ export default function App() {
     const q = query.trim().toLowerCase();
     const list = journals.filter(
       (j) =>
-        (!q || j.title.toLowerCase().includes(q) || j.scope.toLowerCase().includes(q)) &&
+        (!q ||
+          j.title.toLowerCase().includes(q) ||
+          j.scope.toLowerCase().includes(q) ||
+          j.subject.toLowerCase().includes(q)) &&
         (selectedSubjects.length === 0 || selectedSubjects.includes(j.subject)) &&
         (model === 'All' || j.model === model) &&
         (letter === 'All' || j.title.toUpperCase().startsWith(letter)) &&
@@ -82,7 +125,12 @@ export default function App() {
           <p className="eyebrow">Publish without article processing charges</p>
           <h1>Nil APC Journal Finder</h1>
           <p className="author">
-            By <strong>Dr. Suresh Kumar S</strong>, Professor, Department of AI &amp; DS
+            <span className="avatar" aria-hidden="true">SK</span>
+            <span>
+              Compiled by <strong>Dr. Suresh Kumar S</strong>
+              <br />
+              Professor, Department of AI &amp; DS
+            </span>
           </p>
           <p className="lede">
             {journals.length} Elsevier journals you can publish in for free — subscription (hybrid) titles where
@@ -100,9 +148,12 @@ export default function App() {
         <section className="filters" aria-label="Filters">
           <div className="filter-row">
             <input
+              ref={searchRef}
               type="search"
               className="search"
-              placeholder="Search journal title or scope (e.g. machine learning, concrete)…"
+              placeholder="Search title, scope or subject…"
+              title="Tip: press / to search, Esc to clear"
+              aria-label="Search journals"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -138,22 +189,35 @@ export default function App() {
 
           <div className="letters" role="group" aria-label="Starts with">
             {LETTERS.map((l) => (
-              <button key={l} className={`letter ${letter === l ? 'on' : ''}`} onClick={() => setLetter(l)}>
+              <button
+                key={l}
+                className={`letter ${letter === l ? 'on' : ''}`}
+                onClick={() => setLetter(l)}
+                disabled={l !== 'All' && !lettersInUse.has(l)}
+                aria-pressed={letter === l}
+              >
                 {l}
               </button>
             ))}
           </div>
         </section>
 
-        <div className="result-bar">
+        <div className="result-bar" aria-live="polite">
           <span>
             Showing <strong>{filtered.length}</strong> of {journals.length} journals
           </span>
-          {activeFilterCount > 0 && (
-            <button className="link-btn" onClick={resetFilters}>
-              Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
-            </button>
-          )}
+          <span className="result-actions">
+            {activeFilterCount > 0 && (
+              <button className="link-btn" onClick={resetFilters}>
+                Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
+              </button>
+            )}
+            {filtered.length > 0 && (
+              <button className="link-btn" onClick={() => downloadCsv(filtered)}>
+                ⤓ Download CSV
+              </button>
+            )}
+          </span>
         </div>
 
         {filtered.length === 0 ? (
@@ -178,8 +242,15 @@ export default function App() {
       <footer className="site-footer">
         <div className="wrap">
           Compiled by <strong>Dr. Suresh Kumar S</strong>, Professor, Department of AI &amp; DS
+          <span className="footer-note">© {new Date().getFullYear()}</span>
         </div>
       </footer>
+
+      {showTop && (
+        <button className="to-top" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="Back to top">
+          ↑
+        </button>
+      )}
     </div>
   );
 }

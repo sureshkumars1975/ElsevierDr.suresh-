@@ -20,8 +20,12 @@ export default function JournalCard({ journal, isFav, onToggleFav }) {
         <span className={`badge ${sponsored ? 'oa' : 'sub'}`}>{journal.model}</span>
       </div>
       <div className="card-actions">
-        <a href={journal.url} target="_blank" rel="noreferrer" className="btn">Journal home</a>
-        <a href={journal.guideUrl} target="_blank" rel="noreferrer" className="btn ghost">Guide for authors</a>
+        <a href={journal.url} target="_blank" rel="noreferrer" className="btn" aria-label={`${journal.title} – journal home (opens in new tab)`}>
+          Journal home
+        </a>
+        <a href={journal.guideUrl} target="_blank" rel="noreferrer" className="btn ghost" aria-label={`${journal.title} – guide for authors (opens in new tab)`}>
+          Guide for authors
+        </a>
       </div>
     </article>
   );
