@@ -81,6 +81,9 @@ export default function App() {
         <div className="wrap">
           <p className="eyebrow">Publish without article processing charges</p>
           <h1>Nil APC Journal Finder</h1>
+          <p className="author">
+            By <strong>Dr. Suresh Kumar S</strong>, Professor, Department of AI &amp; DS
+          </p>
           <p className="lede">
             {journals.length} Elsevier journals you can publish in for free — subscription (hybrid) titles where
             the standard route has no APC, plus sponsored open access titles.
@@ -171,6 +174,12 @@ export default function App() {
           choosing the open access option in a hybrid journal does incur an APC. Not affiliated with Elsevier.
         </p>
       </main>
+
+      <footer className="site-footer">
+        <div className="wrap">
+          Compiled by <strong>Dr. Suresh Kumar S</strong>, Professor, Department of AI &amp; DS
+        </div>
+      </footer>
     </div>
   );
 }

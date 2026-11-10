@@ -59,6 +59,7 @@ body {
   text-transform: uppercase;
 }
 .hero h1 { margin: 0; font-size: clamp(1.8rem, 4vw, 2.6rem); letter-spacing: -0.02em; }
+.author { margin: 8px 0 0; color: var(--text); font-size: 0.95rem; }
 .lede { max-width: 680px; color: var(--muted); margin: 10px 0 24px; }
 .stats { display: flex; flex-wrap: wrap; gap: 32px; }
 .stats div { display: flex; flex-direction: column; }
@@ -212,3 +213,13 @@ body {
   .filters { position: static; }
   .filter-row select, .fav-toggle { flex: 1 1 45%; }
 }
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding-block: 20px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
+.site-footer strong { color: var(--text); }
