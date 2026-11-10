@@ -20,6 +20,16 @@ function downloadCsv(list) {
   URL.revokeObjectURL(a.href);
 }
 
+// Filters live in the URL so a filtered view can be bookmarked or shared.
+const params = new URLSearchParams(window.location.search);
+const initial = {
+  query: params.get('q') || '',
+  subjects: (params.get('subject') || '').split('|').filter((s) => subjects.includes(s)),
+  model: models.includes(params.get('model')) ? params.get('model') : 'All',
+  letter: LETTERS.includes(params.get('letter')) ? params.get('letter') : 'All',
+  sort: ['az', 'za', 'subject'].includes(params.get('sort')) ? params.get('sort') : 'az',
+};
+
 function loadFavorites() {
   try {
     return new Set(JSON.parse(localStorage.getItem('nilapc-favs') || '[]'));
@@ -29,11 +39,12 @@ function loadFavorites() {
 }
 
 export default function App() {
-  const [query, setQuery] = useState('');
-  const [selectedSubjects, setSelectedSubjects] = useState([]);
-  const [model, setModel] = useState('All');
-  const [letter, setLetter] = useState('All');
-  const [sort, setSort] = useState('az');
+  const [query, setQuery] = useState(initial.query);
+  const [selectedSubjects, setSelectedSubjects] = useState(initial.subjects);
+  const [model, setModel] = useState(initial.model);
+  const [letter, setLetter] = useState(initial.letter);
+  const [sort, setSort] = useState(initial.sort);
+  const [copied, setCopied] = useState(false);
   const [onlyFavs, setOnlyFavs] = useState(false);
   const [favorites, setFavorites] = useState(loadFavorites);
   const [showTop, setShowTop] = useState(false);
@@ -66,6 +77,27 @@ export default function App() {
       /* storage unavailable */
     }
   }, [favorites]);
+
+  useEffect(() => {
+    const p = new URLSearchParams();
+    if (query.trim()) p.set('q', query.trim());
+    if (selectedSubjects.length) p.set('subject', selectedSubjects.join('|'));
+    if (model !== 'All') p.set('model', model);
+    if (letter !== 'All') p.set('letter', letter);
+    if (sort !== 'az') p.set('sort', sort);
+    const qs = p.toString();
+    window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname);
+  }, [query, selectedSubjects, model, letter, sort]);
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      window.prompt('Copy this link:', window.location.href);
+    }
+  };
 
   const toggleSubject = (s) =>
     setSelectedSubjects((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
@@ -173,7 +205,9 @@ export default function App() {
               ★ Saved ({favorites.size})
             </label>
           </div>
+        </section>
 
+        <section className="facets" aria-label="Subject and letter filters">
           <div className="chips" role="group" aria-label="Subject areas">
             {subjects.map((s) => (
               <button
@@ -212,6 +246,11 @@ export default function App() {
                 Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
               </button>
             )}
+            {activeFilterCount > 0 && (
+              <button className="link-btn" onClick={copyLink}>
+                {copied ? '✓ Link copied' : '🔗 Copy link to this view'}
+              </button>
+            )}
             {filtered.length > 0 && (
               <button className="link-btn" onClick={() => downloadCsv(filtered)}>
                 ⤓ Download CSV
@@ -228,7 +267,7 @@ export default function App() {
         ) : (
           <div className="grid">
             {filtered.map((j) => (
-              <JournalCard key={j.id} journal={j} isFav={favorites.has(j.id)} onToggleFav={toggleFavorite} />
+              <JournalCard key={j.id} journal={j} query={query.trim()} isFav={favorites.has(j.id)} onToggleFav={toggleFavorite} />
             ))}
           </div>
         )}

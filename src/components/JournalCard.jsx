@@ -1,4 +1,17 @@
-export default function JournalCard({ journal, isFav, onToggleFav }) {
+function Highlight({ text, query }) {
+  if (!query) return text;
+  const i = text.toLowerCase().indexOf(query.toLowerCase());
+  if (i === -1) return text;
+  return (
+    <>
+      {text.slice(0, i)}
+      <mark>{text.slice(i, i + query.length)}</mark>
+      {text.slice(i + query.length)}
+    </>
+  );
+}
+
+export default function JournalCard({ journal, query, isFav, onToggleFav }) {
   const sponsored = journal.model === 'Sponsored OA';
   return (
     <article className="card">
@@ -13,8 +26,8 @@ export default function JournalCard({ journal, isFav, onToggleFav }) {
           {isFav ? '★' : '☆'}
         </button>
       </div>
-      <h3>{journal.title}</h3>
-      <p className="scope">{journal.scope}</p>
+      <h3 data-url={journal.url}><Highlight text={journal.title} query={query} /></h3>
+      <p className="scope"><Highlight text={journal.scope} query={query} /></p>
       <div className="badges">
         <span className="badge apc">No APC</span>
         <span className={`badge ${sponsored ? 'oa' : 'sub'}`}>{journal.model}</span>

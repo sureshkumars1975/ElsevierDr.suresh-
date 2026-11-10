@@ -10,6 +10,7 @@
   --green-soft: #e3f4ea;
   --blue: #2457a6;
   --blue-soft: #e5edf9;
+  --mark: #ffe08a;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.05);
   color-scheme: light;
 }
@@ -27,6 +28,7 @@
     --green-soft: #173325;
     --blue: #86aef0;
     --blue-soft: #1a2740;
+    --mark: #6b4e00;
     --shadow: none;
     color-scheme: dark;
   }
@@ -93,9 +95,9 @@ body {
   top: 0;
   z-index: 5;
   background: var(--bg);
-  padding-block: 18px 12px;
-  border-bottom: 1px solid var(--border);
+  padding-block: 14px;
 }
+.facets { padding-bottom: 12px; border-bottom: 1px solid var(--border); }
 .filter-row { display: flex; flex-wrap: wrap; gap: 10px; }
 .search {
   flex: 1 1 320px;
@@ -123,7 +125,7 @@ body {
   min-height: 42px;
 }
 
-.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
   font: inherit;
   font-size: 0.85rem;
@@ -277,4 +279,21 @@ body {
   font-size: 1.2rem;
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+mark {
+  background: var(--mark);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+@media print {
+  .filters, .facets, .letters, .result-actions, .star, .card-actions, .to-top { display: none !important; }
+  body, .hero, .card, .site-footer { background: #fff; color: #000; }
+  .hero { padding-block: 0 12px; }
+  .grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .card { box-shadow: none; break-inside: avoid; padding: 10px; border-color: #ccc; }
+  .card:hover { transform: none; }
+  .card h3::after { content: ' — ' attr(data-url); font-weight: 400; font-size: 0.7rem; color: #555; }
 }
